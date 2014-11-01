@@ -1,17 +1,29 @@
 Pebble.addEventListener("ready", function(e) {
   console.log("ready");
 
-  search("cats");
+  search(localStorage.term);
 });
 
 Pebble.addEventListener("appmessage", function(e) {
   console.log("appmessage");
 
-  search("cats");
+  if(localStorage.shake) {
+    search(localStorage.term);
+  }
+});
+
+Pebble.addEventListener("showConfiguration", function(e) {
+  console.log("showConfiguration");
+
+  Pebble.openURL("http://ben-hudson.github.io/defaced?" + encodeURIComponent(JSON.stringify(localStorage)));
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
   console.log("webviewclosed");
+
+  var settings = JSON.parse(decodeURIComponent(e.response));
+  localStorage.term = settings.term;
+  localStorage.shake = settings.shake;
 });
 
 function search(term) {
