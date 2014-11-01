@@ -1,4 +1,5 @@
 #include <pebble.h>
+#include "png.h"
 
 static Window *window;
 static BitmapLayer *bitmap_layer;
@@ -12,7 +13,7 @@ typedef enum {
 } AppKey;
 
 static void received_image(DictionaryIterator *it, void *ctx) {
-  Tuple *tuple = dict_read_fist(it);
+  Tuple *tuple = dict_read_first(it);
   char *buffer = malloc(tuple->length);
   memcpy(buffer, tuple->value->data, tuple->length);
 
@@ -29,7 +30,7 @@ static void update_time(struct tm* time, TimeUnits units) {
 static void request_image(AccelAxisType axis, int32_t direction) {
   DictionaryIterator *it;
   app_message_outbox_begin(&it);
-  dict_write_int(it, APP_KEY_OUTGOING, 0, sizeof(int));
+  dict_write_int(it, APP_KEY_OUTGOING, 0, sizeof(int), true);
   app_message_outbox_send();
 }
 
