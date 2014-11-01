@@ -11,6 +11,28 @@ typedef enum {
   APP_KEY_OUTGOING,
 } AppKey;
 
+static void received_image(DictionaryIterator *it, void *ctx) {
+  Tuple *tuple = dict_read_fist(it);
+  char *buffer = malloc(tuple->length);
+  memcpy(buffer, tuple->value->data, tuple->length);
+
+  gbitmap_destroy(bitmap);
+  bitmap = gbitmap_create_with_png_data((uint8_t *)buffer, tuple->length);
+  layer_mark_dirty(bitmap_layer_get_layer(bitmap_layer));
+}
+
+static void update_time(struct tm* time, TimeUnits units) {
+  clock_copy_time_string(text, sizeof(text));
+  text_layer_set_text(text_layer, text);
+}
+
+static void request_image(AccelAxisType axis, int32_t direction) {
+  DictionaryIterator *it;
+  app_message_outbox_begin(&it);
+  dict_write_int(it, APP_KEY_OUTGOING, 0, sizeof(int));
+  app_message_outbox_send();
+}
+
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
@@ -37,6 +59,15 @@ static void window_unload(Window *window) {
 }
 
 static void init(void) {
+  app_comm_set_sniff_interval(SNIFF_INTERVAL_REDUCED);
+
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  app_message_register_inbox_received(received_image);
+
+  tick_timer_service_subscribe(MINUTE_UNIT, update_time);
+
+  accel_tap_service_subscribe(request_image);
+
   window = window_create();
   window_set_window_handlers(window, (WindowHandlers) {
     .load = window_load,
@@ -47,6 +78,9 @@ static void init(void) {
 
 static void deinit(void) {
   window_destroy(window);
+  accel_tap_service_unsubscribe();
+  tick_timer_service_unsubscribe();
+  app_message_deregister_callbacks();
 }
 
 int main(void) {
