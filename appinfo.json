@@ -1,0 +1,21 @@
+{
+  "uuid": "de7fec5d-99be-40f5-89b1-a829bae8609b",
+  "shortName": "Defaced",
+  "longName": "Defaced",
+  "companyName": "Ben Hudson",
+  "capabilities": [
+    "configurable"
+  ],
+  "versionCode": 1,
+  "versionLabel": "1.0",
+  "watchapp": {
+    "watchface": true
+  },
+  "appKeys": {
+    "incoming": 0,
+    "outgoing": 1
+  },
+  "resources": {
+    "media": []
+  }
+}
