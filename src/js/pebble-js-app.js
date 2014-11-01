@@ -6,6 +6,8 @@ Pebble.addEventListener("ready", function(e) {
 
 Pebble.addEventListener("appmessage", function(e) {
   console.log("appmessage");
+
+  search("cats");
 });
 
 Pebble.addEventListener("webviewclosed", function(e) {
@@ -58,7 +60,7 @@ function convert(image) {
 
 function send(bytes, chunkSize) {
   sendChunk = function(start) {
-    console.log("sending " + bytes.length + " - starting at " + start);
+    console.log("sending " + bytes.length + " bytes - starting at " + start);
 
     var chunk = bytes.slice(start, start + chunkSize);
     Pebble.sendAppMessage({"incoming": chunk}, function(e) {
