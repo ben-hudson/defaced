@@ -25,6 +25,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
       localStorage.term = settings.term;
     }
     localStorage.shake = settings.shake;
+    search(localStorage.term);
   }
 });
 
