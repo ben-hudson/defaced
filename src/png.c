@@ -120,3 +120,4 @@ GBitmap* gbitmap_create_with_png_data(uint8_t *data, int data_bytes) {
 
   return gbitmap_ptr;
 }
+
