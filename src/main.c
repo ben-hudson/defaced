@@ -8,18 +8,55 @@ static GBitmap *bitmap;
 static char text[8];
 
 typedef enum {
-  APP_KEY_INCOMING,
-  APP_KEY_OUTGOING,
+  APP_KEY_SIZE,
+  APP_KEY_DATA,
 } AppKey;
 
 static void received_image(DictionaryIterator *it, void *ctx) {
-  Tuple *tuple = dict_read_first(it);
-  char *buffer = malloc(tuple->length);
-  memcpy(buffer, tuple->value->data, tuple->length);
+  static char *buffer = NULL;
+  static uint16_t total = 0;
+  static uint16_t index = 0;
 
-  gbitmap_destroy(bitmap);
-  bitmap = gbitmap_create_with_png_data((uint8_t *)buffer, tuple->length);
-  layer_mark_dirty(bitmap_layer_get_layer(bitmap_layer));
+  Tuple *tuple = dict_read_first(it);
+  // while(tuple) {
+    switch(tuple->key) {
+      case APP_KEY_SIZE: {
+        if(buffer == NULL) {
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "total size: %d", tuple->value->uint16);
+          buffer = malloc(tuple->value->uint16);
+          total = tuple->value->uint16;
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "malloced a new buffer at %p", buffer);
+        }
+      }
+      break;
+      case APP_KEY_DATA: {
+        //APP_LOG(APP_LOG_LEVEL_DEBUG, "received chunk: %d", tuple->length);
+        if(buffer) {
+          memcpy(buffer + index, tuple->value->data, tuple->length);
+          index += tuple->length;
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "Got %d/%d", index, total);
+          if(index >= total) {
+            APP_LOG(APP_LOG_LEVEL_DEBUG, "Got the whole image!");
+            gbitmap_destroy(bitmap);
+            bitmap = gbitmap_create_with_png_data((uint8_t *)buffer, total);
+            layer_mark_dirty(bitmap_layer_get_layer(bitmap_layer));
+            buffer = NULL;
+            index = 0;
+          }
+        } else {
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "Buffer is %p", buffer);
+        }
+      }
+    }
+  // }
+  // while(malloc(tuple->length);
+  // memcpy(buffer, tuple->value->data, tuple->length);
+
+  // gbitmap_destroy(bitmap);
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "%d bytes free", heap_bytes_free());
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "Received %d bytes", tuple->length);
+  // bitmap = gbitmap_create_with_png_data((uint8_t *)buffer, tuple->length);
+  // layer_mark_dirty(bitmap_layer_get_layer(bitmap_layer));
 }
 
 static void update_time(struct tm* time, TimeUnits units) {
@@ -30,7 +67,7 @@ static void update_time(struct tm* time, TimeUnits units) {
 static void request_image(AccelAxisType axis, int32_t direction) {
   DictionaryIterator *it;
   app_message_outbox_begin(&it);
-  dict_write_int(it, APP_KEY_OUTGOING, 0, sizeof(int), true);
+  dict_write_int(it, APP_KEY_DATA, 0, sizeof(int), true);
   app_message_outbox_send();
 }
 
@@ -47,6 +84,7 @@ static void window_load(Window *window) {
   text_layer = text_layer_create((GRect) { .origin = { 0, bounds.size.h - 40 }, .size = { bounds.size.w, 40 } });
   text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text(text_layer, text);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "%d px", text_layer_get_content_size(text_layer).w);
   text_layer_set_background_color(text_layer, GColorBlack);
   text_layer_set_text_color(text_layer, GColorWhite);
   text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
