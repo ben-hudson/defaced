@@ -1,5 +1,3 @@
-var in_progress = false;
-
 Pebble.addEventListener("ready", function(e) {
   search(localStorage.term);
 });
@@ -17,13 +15,17 @@ Pebble.addEventListener("showConfiguration", function(e) {
 Pebble.addEventListener("webviewclosed", function(e) {
   if(e.response != "CANCELLED" && e.response != "{}") {
     var settings = JSON.parse(decodeURIComponent(e.response));
-    if (settings.term != "") {
+    if(settings.term != "") {
       localStorage.term = settings.term;
     }
     localStorage.shake = settings.shake;
+    if(localStorage.shake == "on") {
+      search(localStorage.term);
+    }
   } else if(JSON.stringify(localStorage) == "{}") {
     localStorage.term = "mustaches";
     localStorage.shake = "off";
+    search(localStorage.term);
   }
 });
 
@@ -76,9 +78,10 @@ function convert(image) {
   request.send(null);
 }
 
+var sending = false;
 function send(bytes, chunkSize) {
+  var retries = 0;
   sendChunk = function(start) {
-    var retries = 0;
     var end = start + chunkSize;
     var chunk = bytes.slice(start, end);
 
@@ -88,15 +91,15 @@ function send(bytes, chunkSize) {
       if(bytes.length > end) {
         sendChunk(end);
       } else {
-        in_progress = false;
-        console.log("Done!");
+        sending = false;
+        retries = 0;
       }
     }, function(e) {
       if(retries++ < 3) {
-        console.log("Retrying");
         sendChunk(start);
       } else {
-        console.log("FAILED!");
+        sending = false;
+        retries = 0;
       }
     });
   }
