@@ -17,20 +17,26 @@ static void received_image(DictionaryIterator *it, void *ctx) {
   static uint16_t total = 0;
   static uint16_t index = 0;
 
-  Tuple *tuple = dict_find(it);
+  Tuple *tuple = dict_read_first(it);
   while (tuple) {
     switch (tuple->key) {
       case APP_KEY_SIZE: {
         if (buffer) {
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "freeing buffer");
           free(buffer);
         }
         total = tuple->value->uint16;
         buffer = malloc(total);
+        index = 0;
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "allocating buffer of %d bytes", total);
       }
+      break;
       case APP_KEY_DATA: {
         if (buffer) {
           memcpy(buffer + index, tuple->value->data, tuple->length);
           index += tuple->length;
+          APP_LOG(APP_LOG_LEVEL_DEBUG, "receiving bytes %d/%d", index, total);
+
           if (index >= total) {
             gbitmap_destroy(bitmap);
             bitmap = gbitmap_create_with_png_data((uint8_t *)buffer, total);
@@ -40,7 +46,9 @@ static void received_image(DictionaryIterator *it, void *ctx) {
           }
         }
       }
+      break;
     }
+    tuple = dict_read_next(it);
   }
 }
 

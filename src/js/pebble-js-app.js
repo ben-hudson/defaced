@@ -67,11 +67,11 @@ function convert(image) {
       for(var i = 0; i < bytes.byteLength; i++) {
         array.push(bytes[i]);
       }
-      if(!in_progress) {
-        in_progress = true;
+      if(!sending) {
+        sending = true;
         send(array, 1000);
       } else {
-        console.log("Sending another image is in progress!");
+        console.log("sending another image is in progress");
       }
     }
   }
@@ -98,6 +98,7 @@ function send(bytes, chunkSize) {
       if(retries++ < 3) {
         sendChunk(start);
       } else {
+        console.log("giving up sending chunk");
         sending = false;
         retries = 0;
       }
